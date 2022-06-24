@@ -5,7 +5,8 @@ import math as mt
 import sys
 
 @nb.njit
-def gf_opt(MGrid, aliases, BoxLv, p, N, kappa, Gew, rcut, fourpie0):
+
+def gf_opt(MGrid, aliases, BoxLv, p, N, kappa, Gew, rcut, fourpie0, aws, box_volume, flag):
     """ 
     Calculate the Optimized Green Function given by eq.(22) of Ref. [2]_.
 
@@ -169,6 +170,12 @@ def gf_opt(MGrid, aliases, BoxLv, p, N, kappa, Gew, rcut, fourpie0):
 
     PP_err = 2.0/np.sqrt(Lx*Ly*Lz)*np.exp(-0.25*kappa_sq/Gew_sq)*np.exp(-Gew_sq*rcut2)/np.sqrt(rcut)/fourpie0
     PM_err = np.sqrt(PM_err)/Lx
+    PP_err *= np.sqrt(N)*aws**2*fourpie0
+    PM_err *= np.sqrt(N)*aws**2*fourpie0/box_volume**(2./3.)
+    if(flag == "PM"):
+        err = PM_err
+    if(flag == "PP"):
+        err = PP_err
 
-    return PM_err, PP_err
+    return err
 
