@@ -14,12 +14,14 @@ import Yukawa_P3M_err_sub as sub
 
 #============================
 #============================
-kappa = 2.2
+kappa = 3.0
+
 tol = 1.e-6
 tol = tol/np.sqrt(2)
 #============================
-alpha_ewald = 0.4058e9   # for PM err
-rc = 7.604e-9            # for PP err
+alpha_ewald = 0.4875e9   # for PM err
+alpha = alpha_ewald
+rc = 5.604e-9            # for PP err
 #rc = 8.e-9            # for PP err
 #============================
 num_density = 1.0e26
@@ -48,31 +50,66 @@ kappa /=aws
 
 # PM error
 print("Now PM")
-flag = "PM" 
-pm_err = lambda x: (sub.gf_opt(MGrid, aliases, Lv, cao, N, kappa, x, rc, fourpie0, aws, box_volume, flag)-tol)
-pm_root = optimize.newton(pm_err, G_ew)
-print(f"{pm_root:8.4e}, {G_ew:8.4e}")
-print(f"{pm_err(pm_root)+tol}, {pm_err(G_ew)+tol}")
+pm_err = lambda x: (sub.gf_opt(MGrid, aliases, Lv, cao, N, kappa, x, rc, fourpie0, aws, box_volume, flag="PM"))
+#pm_err = lambda x: (sub.gf_opt(MGrid, aliases, Lv, cao, N, kappa, x, rc, fourpie0, aws, box_volume, flag))
+#pm_root = optimize.newton(pm_err, G_ew, maxiter=150)
 
+err_min = 1000
+nloop = 1000
+alpha_root = 10000
+if(1):
+    for i in range(nloop):
+      #if(i%10 == 0):
+      #    print(i, err_min)
+      alpha_temp = 0.5*(i)/nloop*alpha + 1.0*alpha
+      
+      err = pm_err(alpha_temp)
+      rel_err = abs(err-tol)/tol
+       
+      if(rel_err <= err_min):
+        err_min = rel_err
+        alpha_root = alpha_temp
+
+      if(i%10 == 0):
+          print(f"{i}, {err:5.4e}, {rel_err:5.4e}, {alpha_root:5.4e}")
+
+      if(err_min <= 1e-2):
+          print(f"!!!: {i}, {err:5.4e}, {rel_err:5.4e}, {alpha_root:5.4e}")
+          break
+
+#alpha_root = 4.9067e+08
+#print("!!!pm err1 = ", pm_err(alpha_root))
 # PP error
 print("Now PP")
-flag = "PP" 
-pp_err = lambda x: (sub.gf_opt(MGrid, aliases, Lv, cao, N, kappa, pm_root, x, fourpie0, aws, box_volume, flag)-tol)
+#flag = "PP" 
+pp_err = lambda y: (sub.gf_opt(MGrid, aliases, Lv, cao, N, kappa, alpha_root, y, fourpie0, aws, box_volume, flag="PP"))
 
 err_min = 1000
 nloop = 100
 for i in range(nloop):
-  if(i%10 == 0):
-      print(i, err_min)
+  #if(i%1 == 0):
   rc_temp = 1.0*(i)/nloop*rc + 0.7*rc
   err = pp_err(rc_temp)
-  if(err < err_min):
-    err_min = err
-    rc_min = rc_temp
+  rel_err = abs(err-tol)/tol
+  if(rel_err <= err_min):
+    err_min = rel_err
+    rc_root = rc_temp
 
-  if(err_min < 0):
+  if(i%10 == 0):
+      print(f"{i}, {err:5.4e}, {rel_err:5.4e}, {rc_root:5.4e}")
+
+  if(err_min <= 1e-2):
+      print(f"!!!: {i}, {err:5.4e}, {rel_err:5.4e}, {rc_root:5.4e}")
       break
 
-print(rc_min, err_min)
-print(pp_err(rc_min)+tol, tol)
-print(f"rc = {rc_min:8.4e}, alpha={G_ew:8.4e}")
+print("====================================")
+print(f"alpha = {alpha_root:5.4e}")
+print(f"rc = {rc_root:5.4e}")
+
+PM_err = pm_err(alpha_root)
+PP_err = pp_err(rc_root)
+err = np.sqrt(PM_err**2 + PP_err**2)
+
+print(f"PM err = {PM_err:5.4e}")
+print(f"PP err = {PP_err:5.4e}")
+print(f"total err = {err:5.4e}")
