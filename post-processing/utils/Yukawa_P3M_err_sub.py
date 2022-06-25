@@ -1,11 +1,47 @@
+"""
+Sub module for Yukawa pot P3M err calculation.
+Yongjun Choi
+choiyj@msu.edu
+"""
 import scipy.constants as const
 import numpy as np
 import numba as nb
 import math as mt
 import sys
 
-@nb.njit
+#@nb.njit
+def root_finding(x_min, x_max, x, func, tol):
+    """
+    root finding using a binary bifercation.
+    Numba does not support f-statement yet.
+    Most work is func call, so the performance is alsmost same without numba call.
+    """
+    nloop = 100
+    err_low = func(x_min)
+    err_up = func(x_max)
 
+    for i in range(nloop):
+        err = func(x)
+        rel_err = abs(err-tol)/tol
+        if(err < tol):
+            x_min = x
+            x = (x+x_max)/2.
+
+        if(err >= tol):
+            x_max = x
+            x = (x+x_min)/2.
+
+        print(f"{i}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
+
+        if(rel_err <= 1e-3):
+            print(f"!!!: {i}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
+            break
+
+    return x
+
+
+#########################################################
+@nb.njit
 def gf_opt(MGrid, aliases, BoxLv, p, N, kappa, Gew, rcut, fourpie0, aws, box_volume, flag):
     """ 
     Calculate the Optimized Green Function given by eq.(22) of Ref. [2]_.
