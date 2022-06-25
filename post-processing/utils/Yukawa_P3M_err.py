@@ -21,16 +21,15 @@ kappa = 3.0             # Yukawa screening parameter
 tol = 1.e-6             # force error tolerance
 tol = tol/np.sqrt(2)    # Because we have PM and PP force errors. tol = sqrt(PM_err**2 + PP_err**2)
 #============================
-alpha_ewald = 0.4875e9  # for PM err - any number btw alpha_min and alpha_max
-alpha = alpha_ewald     # alias
-
-rc = 5.604e-9           # for PP err - any number btw rc_min and rc_max
+alpha_min = 1e8         # small enough than kappa = 0 case.
+alpha_max = 1e9         # large enough than kappa = 3 case.
 
 rc_min = 5.3e-11        # Bohr radius. Small enough
 rc_max = 1e-7           # = 0.1 um. So I think this is large enough.
 
-alpha_min = 1e8         # small enough than kappa = 0 case.
-alpha_max = 1e9         # large enough than kappa = 3 case.
+alpha_ewald = (alpha_min + alpha_max)/2.0   # any number btw min and max
+rc = (rc_min + rc_max)/2.0                  # any number btw min and max
+alpha = alpha_ewald     # alias
 #============================
 """
 Initial condition. Getting from a Sarkas input file.

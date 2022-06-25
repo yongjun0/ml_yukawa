@@ -39,7 +39,6 @@ def root_finding(x_min, x_max, x, func, tol):
 
     return x
 
-
 #########################################################
 @nb.njit
 def gf_opt(MGrid, aliases, BoxLv, p, N, kappa, Gew, rcut, fourpie0, aws, box_volume, flag):
