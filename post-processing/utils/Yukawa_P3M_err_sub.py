@@ -9,6 +9,67 @@ import numba as nb
 import math as mt
 import sys
 
+#nb.njut
+def Yukawa_err(params):
+    kappa = params.Potential.kappa             # Yukawa screening parameter
+    #print("kappa = ", kappa)
+
+    tol = 1.e-6             # force error tolerance
+    tol = tol/np.sqrt(2)    # Because we have PM and PP force errors. tol = sqrt(PM_err**2 + PP_err**2)
+    #============================
+    alpha_min = 1e8         # small enough than kappa = 0 case.
+    alpha_max = 1e9         # large enough than kappa = 3 case.
+
+    rc_min = 5.3e-11        # Bohr radius. Small enough
+    rc_max = 1e-7           # = 0.1 um. So I think this is large enough.
+
+    alpha_ewald = (alpha_min + alpha_max)/2.0   # any number btw min and max
+    rc = (rc_min + rc_max)/2.0                  # any number btw min and max
+    alpha = alpha_ewald     # alias
+    #============================
+    """
+    Initial condition. Getting from a Sarkas input file.
+    Refer to the manual for the meaning of each variable.
+    """
+    MGrid = params.P3M.MGrid
+    aliases = params.P3M.aliases
+    cao = params.P3M.cao
+    G_ew = alpha_ewald
+    N = params.N               # number of particles
+    #============================
+    wp = params.wp     # plasma frequency square
+    aws = params.aws
+    Lv = params.Lv
+    box_volume = params.box_volume 
+    kappa /=aws                                         # de-normalize kappa. now kappa means 1/(screening distance)
+    eps0 = const.epsilon_0                              # permissivity
+    fourpie0 = 4.0*np.pi*eps0   
+    if(1):
+        # PM error
+        print("Now PM")
+        pm_err = lambda x: (gf_opt(MGrid, aliases, Lv, cao, N, kappa, x, rc, fourpie0, aws, box_volume, flag="PM"))
+
+        # root finding for alpha
+        alpha_root = root_finding(alpha_min, alpha_max, alpha, pm_err, tol)
+
+        # PP error
+        print("Now PP")
+        pp_err = lambda y: (gf_opt(MGrid, aliases, Lv, cao, N, kappa, alpha_root, y, fourpie0, aws, box_volume, flag="PP"))
+        # root finding for rc 
+        rc_root = root_finding(rc_max, rc_min, rc, pp_err, tol)
+
+        PM_err = pm_err(alpha_root)
+        PP_err = pp_err(rc_root)
+        err = np.sqrt(PM_err**2 + PP_err**2)
+        print("====================================")
+        print(f"alpha = {alpha_root:5.4e}")
+        print(f"rc = {rc_root:5.4e}")
+        print("====================================")
+        print(f"PM err = {PM_err:5.4e}")
+        print(f"PP err = {PP_err:5.4e}")
+        print(f"total err = {err:5.4e}")
+    return alpha_root, rc_root
+
 #@nb.njit
 def root_finding(x_min, x_max, x, func, tol):
     """
@@ -23,6 +84,10 @@ def root_finding(x_min, x_max, x, func, tol):
     for i in range(nloop):
         err = func(x)
         rel_err = abs(err-tol)/tol
+        if(rel_err <= 1e-3):
+            print(f"!!!: {i}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
+            break
+
         if(err < tol):
             x_min = x
             x = (x+x_max)/2.
@@ -31,11 +96,8 @@ def root_finding(x_min, x_max, x, func, tol):
             x_max = x
             x = (x+x_min)/2.
 
-        print(f"{i}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
+        #print(f"{i}, {tol:5.4e}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
 
-        if(rel_err <= 1e-3):
-            print(f"!!!: {i}, {err:5.4e}, {rel_err:5.4e}, {x_min:5.4e}, {x:5.4e}, {x_max:5.4e}")
-            break
 
     return x
 

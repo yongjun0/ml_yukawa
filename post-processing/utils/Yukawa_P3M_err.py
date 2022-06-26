@@ -16,7 +16,7 @@ import Yukawa_P3M_err_sub as sub
 """
 input data
 """
-kappa = 3.0             # Yukawa screening parameter
+kappa = 2.1             # Yukawa screening parameter
 
 tol = 1.e-6             # force error tolerance
 tol = tol/np.sqrt(2)    # Because we have PM and PP force errors. tol = sqrt(PM_err**2 + PP_err**2)
