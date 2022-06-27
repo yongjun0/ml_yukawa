@@ -1,3 +1,5 @@
+*.dat
+*.out
 *npz
 *npy
 *npc
