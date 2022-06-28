@@ -54,6 +54,11 @@ verbose = Verbose(params)
 #######################
 Nt = params.Control.Nstep    # number of time steps
 N = params.total_num_ptcls
+Ndump = int(Nt/params.Control.dump_step)
+print("Ndump = ", Ndump)
+pos_all = np.zeros((Ndump+1, N, 3))
+vel_all = np.zeros((Ndump+1, N, 3))
+
 
 #######################
 # Un-comment the following if you want to calculate n(q,t)
@@ -114,6 +119,8 @@ if(0):
 U = calc_pot_acc(ptcls,params)
 print("U = ", U)
 
+
+
 # Calculate initial kinetic energy and temperature
 Ks, Tps = thermostat.calc_kin_temp(ptcls.vel,ptcls.species_num,ptcls.species_mass,params.kB)
 K = np.ndarray.sum(Ks)
@@ -156,8 +163,10 @@ if not (params.load_method == "restart"):
         #    np.savetxt(f_xyz, np.c_[ptcls.species_name, ptcls.pos/params.Lx, ptcls.vel, ptcls.acc], 
         #        fmt="%s %.6e %.6e %.6e %.6e %.6e %.6e %.6e %.6e %.6e")
     thermostat.remove_drift(ptcls.vel,ptcls.species_num, ptcls.species_mass)
+pos_all[0] = ptcls.pos
+vel_all[0] = ptcls.vel
 checkpoint.dump(ptcls, 0)
-#sys.exit()
+
 time_stamp[its] = time.time(); its += 1
 # Turn on magnetic field, if not on already, and thermalize
 if (params.Magnetic.on == 1 and params.Magnetic.elec_therm == 1):
@@ -215,6 +224,8 @@ else:
         # Particles' positions, velocities, accelerations for OVITO
         f_xyz = open(params.Control.checkpoint_dir+"/"+"pva_" + params.Control.fname_app + ".xyz", "w+")
 
+
+ic_dump = 0
 if ( params.Control.screen_output):
     print("\n------------- Production -------------")
 
@@ -239,10 +250,15 @@ for it in range(it_start, Nt):
     t_Tp_E_K_U = np.array([params.Control.dt*it, Tp, E, K, U]).reshape(1,5)
     np.savetxt(f_output_E, t_Tp_E_K_U)
     f_output_E.flush()
- 
+
+
     # Save particles' data for restart
     if ((it+1) % params.Control.dump_step == 0):
-        checkpoint.dump(ptcls, it+1)
+        ic_dump += 1
+        print("it = ", it+1, ic_dump)
+        pos_all[ic_dump] = ptcls.pos
+        vel_all[ic_dump] = ptcls.vel
+        #checkpoint.dump(ptcls, it+1)
 
     # Un-comment for n(q,t) calculation
     # Spatial Fourier transform for (Dynamic) Structure Factor
@@ -282,5 +298,8 @@ if (params.Control.writexyz):
 # Print elapsed times to screen
 if (params.Control.verbose):
     verbose.time_stamp(time_stamp)
+
+file_name = params.Control.checkpoint_dir+"/"+"test"
+np.savez(file_name, pos=ptcls.pos, vel=ptcls.vel)
 
 # end of the code
