@@ -27,7 +27,6 @@ from S_particles import Particles
 from S_verbose import Verbose
 from S_params import Params
 from S_checkpoint import Checkpoint
-#import Yukawa_P3M_err_sub as sub
 
 time_stamp= np.zeros(10)
 its = 0
