@@ -165,7 +165,6 @@ if not (params.load_method == "restart"):
 pos_all[0] = ptcls.pos
 vel_all[0] = ptcls.vel
 checkpoint.dump(ptcls, 0)
-
 time_stamp[its] = time.time(); its += 1
 # Turn on magnetic field, if not on already, and thermalize
 if (params.Magnetic.on == 1 and params.Magnetic.elec_therm == 1):
@@ -298,7 +297,7 @@ if (params.Control.writexyz):
 if (params.Control.verbose):
     verbose.time_stamp(time_stamp)
 
-file_name = params.Control.checkpoint_dir+"/"+"test"
-np.savez(file_name, pos=ptcls.pos, vel=ptcls.vel)
+file_name = params.Control.checkpoint_dir+"/../"+"S_checkpoint_pv_all"
+np.savez(file_name, pos=pos_all, vel=vel_all)
 
 # end of the code
