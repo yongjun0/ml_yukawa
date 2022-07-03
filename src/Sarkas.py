@@ -55,8 +55,8 @@ Nt = params.Control.Nstep    # number of time steps
 N = params.total_num_ptcls
 Ndump = int(Nt/params.Control.dump_step)
 print("Ndump = ", Ndump)
-pos_all = np.zeros((Ndump+1, N, 3))
-vel_all = np.zeros((Ndump+1, N, 3))
+pos_all = np.zeros((Ndump, N, 3))
+vel_all = np.zeros((Ndump, N, 3))
 
 
 #######################
@@ -162,8 +162,8 @@ if not (params.load_method == "restart"):
         #    np.savetxt(f_xyz, np.c_[ptcls.species_name, ptcls.pos/params.Lx, ptcls.vel, ptcls.acc], 
         #        fmt="%s %.6e %.6e %.6e %.6e %.6e %.6e %.6e %.6e %.6e")
     thermostat.remove_drift(ptcls.vel,ptcls.species_num, ptcls.species_mass)
-pos_all[0] = ptcls.pos
-vel_all[0] = ptcls.vel
+#pos_all[0] = ptcls.pos
+#vel_all[0] = ptcls.vel
 checkpoint.dump(ptcls, 0)
 time_stamp[its] = time.time(); its += 1
 # Turn on magnetic field, if not on already, and thermalize
@@ -251,11 +251,11 @@ for it in range(it_start, Nt):
 
 
     # Save particles' data for restart
-    if ((it+1) % params.Control.dump_step == 0):
-        ic_dump += 1
-        print("it = ", it+1, ic_dump)
+    if ((it) % params.Control.dump_step == 0):
+        print("it = ", it, ic_dump)
         pos_all[ic_dump] = ptcls.pos
         vel_all[ic_dump] = ptcls.vel
+        ic_dump += 1
         #checkpoint.dump(ptcls, it+1)
 
     # Un-comment for n(q,t) calculation
