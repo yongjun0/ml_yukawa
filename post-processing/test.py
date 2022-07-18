@@ -1,43 +1,39 @@
-import matplotlib.pyplot as plt
+import sys
 import numpy as np
-from numpy.fft import fft, ifft
+import matplotlib.pyplot as plt
 
-# sampling rate
-sr = 2000
-# sampling interval
-ts = 1.0/sr
-t = np.arange(0,1,ts)
+kappa = str(sys.argv[1])
+gamma = str(sys.argv[2])
 
-freq = 1.
-x = 3*np.sin(2*np.pi*freq*t)
+N = 10000
+Npd = 8000
+dt = 0.1
+q_max = 30
 
-freq = 4
-x += np.sin(2*np.pi*freq*t)
+T = Npd * dt
+L = (4*np.pi*N/3)**(1./3)
+dq = 2*np.pi/L
+Nq = int(q_max/dq)
+ 
+#frequency range
+dw = 2*np.pi/T
 
-freq = 7   
-x += 0.5* np.sin(2*np.pi*freq*t)
+w = np.arange(-dw*Npd, dw*Npd, dw)
 
-X = fft(x)
-N = len(X)
-n = np.arange(N)
-T = N/sr
-freq = n/T 
-print(T, freq)
+path0 = "../Yukawa/kappa_"+str(kappa)+"/gamma_"+str(gamma)+"/data/"
+fn = "sqw_avg.npy"
+data = np.load(path0+fn)
 
-plt.figure(figsize = (12, 6))
-plt.subplot(121)
-
-plt.stem(freq, np.abs(X), 'b', \
-         markerfmt=" ", basefmt="-b")
-plt.xlabel('Freq (Hz)')
-plt.ylabel('FFT Amplitude |X(freq)|')
-plt.xlim(0, 10)
-
-plt.subplot(122)
-plt.plot(t, ifft(X), 'r')
-plt.xlabel('Time (s)')
-plt.ylabel('Amplitude')
-plt.tight_layout()
-plt.show()
-
-
+sqw = data
+print(sqw.shape)
+print(Nq, len(w))
+print(w)
+xmax = 5
+xmin = -xmax
+if(1):
+    plt.figure()
+    plt.plot(w, sqw[10, :])
+    plt.xlim(xmin, xmax)
+    plt.xlabel("$\omega/ \omega_i$", fontsize = 16)
+    #plt.ylabel("$S(q, \omega/ \omega_i)$", fontsize = 16)
+    plt.show()
